@@ -96,6 +96,73 @@ class KSModel(object):
         return new_state
 
 
+class ArticulatedKSModel(KSModel):
+    """Kinematic model for a single-tractor + single-trailer articulated vehicle.
+
+    This extends the single-track model by adding a trailer heading (phi) and
+    the trailer axle position computed from the hitch (assumed at the rear axle).
+    The trailer dynamics use a simple nonholonomic trailer model:
+        phi_dot = (v / L_t) * sin(theta - phi)
+    where L_t is the trailer length (distance from hitch to trailer axle).
+
+    The constructor accepts additional parameters `trailer_length` and `hitch_offset`.
+    """
+    def __init__(
+        self,
+        wheel_base: float,
+        step_len: float,
+        n_step: int,
+        speed_range: list,
+        angle_range: list,
+        trailer_length: float = 3.0,
+        hitch_offset: float = 0.0,
+    ):
+        super().__init__(wheel_base, step_len, n_step, speed_range, angle_range)
+        self.trailer_length = trailer_length
+        # hitch_offset: distance from rear-axle reference to actual hitch along vehicle body
+        self.hitch_offset = hitch_offset
+
+    def step(self, state: State, action: list, step_time:int=NUM_STEP) -> State:
+        new_state = copy.deepcopy(state)
+        x, y = new_state.loc.x, new_state.loc.y
+        steer, speed = action
+        new_state.steering = steer
+        new_state.speed = speed
+        new_state.speed = np.clip(new_state.speed, *self.speed_range)
+        new_state.steering = np.clip(new_state.steering, *self.angle_range)
+
+        # trailer heading (phi) default
+        phi = getattr(new_state, 'trailer_heading', new_state.heading)
+
+        for _ in range(step_time):
+            for _ in range(self.mini_iter):
+                # tractor (rear-axle reference) kinematics (same as KSModel)
+                x += new_state.speed * np.cos(new_state.heading) * self.step_len/self.mini_iter
+                y += new_state.speed * np.sin(new_state.heading) * self.step_len/self.mini_iter
+                new_state.heading += (
+                    new_state.speed * np.tan(new_state.steering) / self.wheel_base * self.step_len/self.mini_iter
+                )
+
+                # trailer kinematics (single trailer attached at hitch on rear axle)
+                # phi_dot = (v / L_t) * sin(theta - phi)
+                if self.trailer_length > 1e-6:
+                    phi += (new_state.speed / self.trailer_length) * np.sin(new_state.heading - phi) * self.step_len/self.mini_iter
+
+        new_state.loc = Point(x, y)
+        new_state.trailer_heading = phi
+
+        # compute trailer axle position assuming hitch at rear-axle minus hitch_offset
+        # hitch position (hx, hy) = rear axle position shifted backward along heading by hitch_offset
+        hx = new_state.loc.x - self.hitch_offset * np.cos(new_state.heading)
+        hy = new_state.loc.y - self.hitch_offset * np.sin(new_state.heading)
+        # trailer axle at distance trailer_length behind hitch, along trailer heading
+        tx = hx - self.trailer_length * np.cos(phi)
+        ty = hy - self.trailer_length * np.sin(phi)
+        new_state.trailer_loc = Point(tx, ty)
+
+        return new_state
+
+
 class Vehicle:
     """_summary_
     """

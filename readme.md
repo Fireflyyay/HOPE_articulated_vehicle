@@ -1,3 +1,13 @@
+# HOPE for articulated vehicles
+This fork is dedicated to transfer HOPE planner to articulated vehicles.
+
+## TO-DO-LIST
+``vehicle.py``: 
+1. Add necessary contents to ``State``, such as articulation_angle etc.
+2. New ``ArticulatedKSModel`` to realize the kinemic of the vehicle.
+
+
+
 # HOPE: A Reinforcement Learning-based Hybrid Policy Path Planner for Diverse Parking Scenarios
 ![pipeline](assets/algo_struct.png)
 

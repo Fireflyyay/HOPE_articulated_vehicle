@@ -69,13 +69,13 @@ class CarParking(gym.Env):
         self.t = 0.0
         self.k = None
         self.level = MAP_LEVEL
-        self.tgt_repr_size = 5 # relative_distance, cos(theta), sin(theta), cos(phi), sin(phi)
+        self.tgt_repr_size = 7 # relative_distance, cos(theta), sin(theta), cos(phi), sin(phi)
 
         if self.level in ['Normal', 'Complex', 'Extrem']:
             self.map = ParkingMapNormal(self.level)
         elif self.level == 'dlp':
             self.map = ParkingMapDLP()
-        self.vehicle = Vehicle(n_step=NUM_STEP, step_len=STEP_LENGTH)
+        self.vehicle = Vehicle(n_step=NUM_STEP, step_len=STEP_LENGTH, articulated=True, trailer_length= TRAILER_LENGTH, hitch_offset=HITCH_OFFSET)
         self.lidar = LidarSimlator(LIDAR_RANGE, LIDAR_NUM)
         self.reward = 0.0
         self.prev_reward = 0.0
@@ -376,8 +376,11 @@ class CarParking(gym.Env):
         rel_distance = math.sqrt((dest_pos[0]-ego_pos[0])**2 + (dest_pos[1]-ego_pos[1])**2)
         rel_angle = math.atan2(dest_pos[1]-ego_pos[1], dest_pos[0]-ego_pos[0]) - ego_pos[2]
         rel_dest_heading = dest_pos[2] - ego_pos[2]
+
+        articulation_angle = self.vehicle.state.rear_heading - getattr(self.vehicle.state, 'rear_heading', self.vehicle.state.heading)
         tgt_repr = np.array([rel_distance, math.cos(rel_angle), math.sin(rel_angle),\
-            math.cos(rel_dest_heading), math.cos(rel_dest_heading)])
+            math.cos(rel_dest_heading), math.cos(rel_dest_heading),\
+                math.cos(articulation_angle) , math.sin(articulation_angle)])
         return tgt_repr 
 
     def render(self, mode: str = "human"):

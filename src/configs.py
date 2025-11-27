@@ -15,6 +15,8 @@ FRONT_HANG = 0.96  # front hang length
 REAR_HANG = 0.93  # rear hang length
 LENGTH = WHEEL_BASE+FRONT_HANG+REAR_HANG
 WIDTH = 1.94  # width
+TRAILER_LENGTH = 3.0
+HITCH_OFFSET = 0.5
 
 from shapely.geometry import LinearRing
 VehicleBox = LinearRing([
@@ -98,7 +100,7 @@ FPS = 100
 TOLERANT_TIME = 200
 USE_LIDAR = True
 USE_IMG = True
-USE_ACTION_MASK = True
+USE_ACTION_MASK = False # Modified later
 MAX_DIST_TO_DEST = 20
 K = 12 # the render scale
 RS_MAX_DIST = 10

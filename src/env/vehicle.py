@@ -28,6 +28,7 @@ class State:
         else:
             self.speed: float = raw_state[3]
             self.steering: float = raw_state[4]
+        self.rear_heading: float = raw_state[5] if len(raw_state) > 5 else self.heading
 
     def create_box(self) -> LinearRing:
         cos_theta = np.cos(self.heading)
@@ -172,18 +173,25 @@ class Vehicle:
         step_len: float = STEP_LENGTH,
         n_step: int = NUM_STEP,
         speed_range: list = VALID_SPEED, 
-        angle_range: list = VALID_STEER
+        angle_range: list = VALID_STEER,
+        articulated: bool = False,
+        trailer_length: float = 3.0,
+        hitch_offset: float = 0.0,
     ) -> None:
 
         self.initial_state: list = None
         self.state: State = None
         self.box: LinearRing = None
         self.trajectory: List[State] = []
-        self.kinetic_model: Callable = \
-            KSModel(wheel_base, step_len, n_step, speed_range, angle_range)
+        if articulated:
+            self.kinetic_model = ArticulatedKSModel(wheel_base, step_len, n_step, speed_range, angle_range, trailer_length, hitch_offset)
+        else:
+            self.kinetic_model: Callable = KSModel(wheel_base, step_len, n_step, speed_range, angle_range)
+
         self.color = COLOR_POOL[0]
         self.v_max = None
         self.v_min = None
+
 
     def reset(self, initial_state: State):
         """

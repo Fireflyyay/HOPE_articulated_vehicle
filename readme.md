@@ -3,8 +3,8 @@ This fork is dedicated to transfer HOPE planner to articulated vehicles.
 
 ## TO-DO-LIST
 ``vehicle.py``: 
-1. Add necessary contents to ``State``, such as articulation_angle etc.
-2. New ``ArticulatedKSModel`` to realize the kinemic of the vehicle.
+1. Adapt Action Mask to the articulated vehicle.
+2. Test current code with small bench size before formally train the model.
 
 
 

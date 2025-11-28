@@ -98,15 +98,20 @@ class KSModel(object):
 
 
 class ArticulatedKSModel(KSModel):
-    """Kinematic model for a single-tractor + single-trailer articulated vehicle.
+    """Kinematic model for an Articulated Steering Vehicle (e.g., Wheel Loader).
 
-    This extends the single-track model by adding a trailer heading (phi) and
-    the trailer axle position computed from the hitch (assumed at the rear axle).
-    The trailer dynamics use a simple nonholonomic trailer model:
-        phi_dot = (v / L_t) * sin(theta - phi)
-    where L_t is the trailer length (distance from hitch to trailer axle).
+    Unlike a tractor-trailer, this vehicle steers by actively changing the articulation angle
+    (hinge angle) between the front and rear bodies. The front wheels do not steer relative
+    to the front body.
 
-    The constructor accepts additional parameters `trailer_length` and `hitch_offset`.
+    Kinematics:
+        gamma (articulation angle) = steering input
+        omega_f = v * sin(gamma) / (Lf * cos(gamma) + Lr)
+        theta_r = theta_f - gamma
+
+    Args:
+        hitch_offset (float): Distance from Front Axle to Hinge (Lf).
+        trailer_length (float): Distance from Hinge to Rear Axle (Lr).
     """
     def __init__(
         self,
@@ -119,46 +124,50 @@ class ArticulatedKSModel(KSModel):
         hitch_offset: float = 0.0,
     ):
         super().__init__(wheel_base, step_len, n_step, speed_range, angle_range)
-        self.trailer_length = trailer_length
-        # hitch_offset: distance from rear-axle reference to actual hitch along vehicle body
-        self.hitch_offset = hitch_offset
+        self.trailer_length = trailer_length # Lr
+        self.hitch_offset = hitch_offset     # Lf
 
     def step(self, state: State, action: list, step_time:int=NUM_STEP) -> State:
         new_state = copy.deepcopy(state)
-        x, y = new_state.loc.x, new_state.loc.y
         steer, speed = action
-        new_state.steering = steer
-        new_state.speed = speed
-        new_state.speed = np.clip(new_state.speed, *self.speed_range)
-        new_state.steering = np.clip(new_state.steering, *self.angle_range)
+        
+        # Clip inputs
+        new_state.speed = np.clip(speed, *self.speed_range)
+        new_state.steering = np.clip(steer, *self.angle_range)
 
-        # trailer heading (phi) default
-        phi = getattr(new_state, 'trailer_heading', new_state.heading)
+        # In active articulation, steering input controls the articulation angle (gamma) directly
+        gamma = new_state.steering
+        v = new_state.speed
+        Lf = self.hitch_offset
+        Lr = self.trailer_length
 
         for _ in range(step_time):
             for _ in range(self.mini_iter):
-                # tractor (rear-axle reference) kinematics (same as KSModel)
-                x += new_state.speed * np.cos(new_state.heading) * self.step_len/self.mini_iter
-                y += new_state.speed * np.sin(new_state.heading) * self.step_len/self.mini_iter
-                new_state.heading += (
-                    new_state.speed * np.tan(new_state.steering) / self.wheel_base * self.step_len/self.mini_iter
+                # Calculate angular velocity of the front body
+                # omega = v * sin(gamma) / (Lf * cos(gamma) + Lr)
+                denom = Lf * np.cos(gamma) + Lr
+                if abs(denom) < 1e-6: denom = 1e-6
+                omega = v * np.sin(gamma) / denom
+
+                # Update front heading
+                new_state.heading += omega * self.step_len / self.mini_iter
+                
+                # Update front position (Front Axle)
+                new_state.loc = Point(
+                    new_state.loc.x + v * np.cos(new_state.heading) * self.step_len / self.mini_iter,
+                    new_state.loc.y + v * np.sin(new_state.heading) * self.step_len / self.mini_iter
                 )
 
-                # trailer kinematics (single trailer attached at hitch on rear axle)
-                # phi_dot = (v / L_t) * sin(theta - phi)
-                if self.trailer_length > 1e-6:
-                    phi += (new_state.speed / self.trailer_length) * np.sin(new_state.heading - phi) * self.step_len/self.mini_iter
+        # Update rear heading based on fixed constraint: theta_r = theta_f - gamma
+        new_state.rear_heading = new_state.heading - gamma
 
-        new_state.loc = Point(x, y)
-        new_state.trailer_heading = phi
-
-        # compute trailer axle position assuming hitch at rear-axle minus hitch_offset
-        # hitch position (hx, hy) = rear axle position shifted backward along heading by hitch_offset
-        hx = new_state.loc.x - self.hitch_offset * np.cos(new_state.heading)
-        hy = new_state.loc.y - self.hitch_offset * np.sin(new_state.heading)
-        # trailer axle at distance trailer_length behind hitch, along trailer heading
-        tx = hx - self.trailer_length * np.cos(phi)
-        ty = hy - self.trailer_length * np.sin(phi)
+        # Update trailer_loc (Rear Axle position) for observation/reference
+        # Hinge position
+        hx = new_state.loc.x - Lf * np.cos(new_state.heading)
+        hy = new_state.loc.y - Lf * np.sin(new_state.heading)
+        # Rear Axle position
+        tx = hx - Lr * np.cos(new_state.rear_heading)
+        ty = hy - Lr * np.sin(new_state.rear_heading)
         new_state.trailer_loc = Point(tx, ty)
 
         return new_state

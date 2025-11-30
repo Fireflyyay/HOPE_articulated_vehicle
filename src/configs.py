@@ -119,7 +119,7 @@ N_DISCRETE_ACTION = len(discrete_actions)
 #########################
 # model
 GAMMA = 0.98
-BATCH_SIZE = 8192
+BATCH_SIZE = 32  # Batch size is originally 8192
 LR = 5e-6
 TAU = 0.1
 MAX_TRAIN_STEP = 1e6
@@ -143,7 +143,7 @@ USE_ATTENTION = True
 ACTOR_CONFIGS = {
     'n_modal':2+int(USE_IMG)+int(USE_ACTION_MASK),
     'lidar_shape':LIDAR_NUM,
-    'target_shape':5,
+    'target_shape':7,
     'action_mask_shape':N_DISCRETE_ACTION if USE_ACTION_MASK else None,
     'img_shape':(3,64,64) if USE_IMG else None,
     'output_size':2,
@@ -163,7 +163,7 @@ ACTOR_CONFIGS = {
 CRITIC_CONFIGS = {
     'n_modal':2+int(USE_IMG)+int(USE_ACTION_MASK),
     'lidar_shape':LIDAR_NUM,
-    'target_shape':5,
+    'target_shape':7,
     'action_mask_shape':N_DISCRETE_ACTION if USE_ACTION_MASK else None,
     'img_shape':(3,64,64) if USE_IMG else None,
     'output_size':1,

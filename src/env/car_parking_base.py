@@ -108,8 +108,8 @@ class CarParking(gym.Env):
             self.observation_space['lidar'] = spaces.Box(
                 low=low_bound, high=high_bound, shape=(LIDAR_NUM,), dtype=np.float64
             )
-        low_bound = np.array([0,-1,-1,-1,-1])
-        high_bound = np.array([MAX_DIST_TO_DEST,1,1,1,1])
+        low_bound = np.array([0,-1,-1,-1,-1,-1,-1])
+        high_bound = np.array([MAX_DIST_TO_DEST,1,1,1,1,1,1])
         self.observation_space['target'] = spaces.Box(
             low=low_bound, high=high_bound, shape=(self.tgt_repr_size,), dtype=np.float64
         )
@@ -377,7 +377,7 @@ class CarParking(gym.Env):
         rel_angle = math.atan2(dest_pos[1]-ego_pos[1], dest_pos[0]-ego_pos[0]) - ego_pos[2]
         rel_dest_heading = dest_pos[2] - ego_pos[2]
 
-        articulation_angle = self.vehicle.state.rear_heading - getattr(self.vehicle.state, 'rear_heading', self.vehicle.state.heading)
+        articulation_angle = self.vehicle.state.heading - getattr(self.vehicle.state, 'rear_heading', self.vehicle.state.heading)
         tgt_repr = np.array([rel_distance, math.cos(rel_angle), math.sin(rel_angle),\
             math.cos(rel_dest_heading), math.cos(rel_dest_heading),\
                 math.cos(articulation_angle) , math.sin(articulation_angle)])

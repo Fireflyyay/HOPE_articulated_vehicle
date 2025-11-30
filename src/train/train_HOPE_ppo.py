@@ -220,12 +220,14 @@ if __name__=="__main__":
 
             
         writer.add_scalar("total_reward", total_reward, i)
-        writer.add_scalar("avg_reward", np.mean(reward_per_state_list[-1000:]), i)
+        if len(reward_per_state_list) > 0:
+            writer.add_scalar("avg_reward", np.mean(reward_per_state_list[-1000:]), i)
         writer.add_scalar("action_std0", parking_agent.log_std.detach().cpu().numpy().reshape(-1)[0],i)
         writer.add_scalar("action_std1", parking_agent.log_std.detach().cpu().numpy().reshape(-1)[1],i)
         for type_id in scene_chooser.scene_types:
-            writer.add_scalar("success_rate_%s"%scene_chooser.scene_types[type_id],
-                np.mean(scene_chooser.success_record[type_id][-100:]), i)
+            if len(scene_chooser.success_record[type_id]) > 0:
+                writer.add_scalar("success_rate_%s"%scene_chooser.scene_types[type_id],
+                    np.mean(scene_chooser.success_record[type_id][-100:]), i)
         writer.add_scalar("step_num", step_num, i)
         reward_list.append(total_reward)
         reward_info = np.sum(np.array(reward_info), axis=0)
@@ -244,10 +246,22 @@ if __name__=="__main__":
 
         # save best model
         for type_id in scene_chooser.scene_types:
-            success_rate_normal = np.mean(scene_chooser.success_record[0][-100:])
-            success_rate_complex = np.mean(scene_chooser.success_record[1][-100:])
-            success_rate_extreme = np.mean(scene_chooser.success_record[2][-100:])
-            success_rate_dlp = np.mean(scene_chooser.success_record[3][-100:])
+            if len(scene_chooser.success_record[0]) > 0:
+                success_rate_normal = np.mean(scene_chooser.success_record[0][-100:])
+            else:
+                success_rate_normal = 0
+            if len(scene_chooser.success_record[1]) > 0:
+                success_rate_complex = np.mean(scene_chooser.success_record[1][-100:])
+            else:
+                success_rate_complex = 0
+            if len(scene_chooser.success_record[2]) > 0:
+                success_rate_extreme = np.mean(scene_chooser.success_record[2][-100:])
+            else:
+                success_rate_extreme = 0
+            if len(scene_chooser.success_record[3]) > 0:
+                success_rate_dlp = np.mean(scene_chooser.success_record[3][-100:])
+            else:
+                success_rate_dlp = 0
         if success_rate_normal >= best_success_rate[0] and success_rate_complex >= best_success_rate[1] and\
             success_rate_extreme >= best_success_rate[2] and success_rate_dlp >= best_success_rate[3] and i>100:
             raw_best_success_rate = np.array([success_rate_normal, success_rate_complex, success_rate_extreme, success_rate_dlp])

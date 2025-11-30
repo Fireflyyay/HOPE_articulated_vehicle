@@ -242,15 +242,15 @@ class PPOAgent(AgentBase):
         state_batch = self.obs2tensor(batches["state"])
         
         if self.discrete:
-            action_batch = torch.IntTensor(batches["action"]).to(self.device)
+            action_batch = torch.IntTensor(np.array(batches["action"])).to(self.device)
         else:
-            action_batch = torch.FloatTensor(batches["action"]).to(self.device)
+            action_batch = torch.FloatTensor(np.array(batches["action"])).to(self.device) 
         rewards = torch.FloatTensor(np.array(batches["reward"])).unsqueeze(1)
         reward_batch = self._reward_norm(rewards) \
             if self.configs.reward_norm else rewards
         reward_batch = reward_batch.to(self.device)
-        done_batch = torch.FloatTensor(batches["done"]).to(self.device).unsqueeze(1)
-        old_log_prob_batch = torch.FloatTensor(batches["log_prob"]).to(self.device)
+        done_batch = torch.FloatTensor(np.array(batches["done"])).to(self.device).unsqueeze(1)
+        old_log_prob_batch = torch.FloatTensor(np.array(batches["log_prob"])).to(self.device)
         next_state_batch = self.obs2tensor(batches["next_obs"])
         self.memory.clear()
 

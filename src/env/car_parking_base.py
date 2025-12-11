@@ -408,8 +408,10 @@ class CarParking(gym.Env):
         if self.use_action_mask:
             observation['action_mask'] = self.action_filter.get_steps(observation['lidar'])
         observation['target'] = self._get_targt_repr()
-        pygame.display.update()
-        self.clock.tick(self.fps)
+        
+        if mode == "human":
+            pygame.display.update()
+            self.clock.tick(self.fps)
         
         return observation
 

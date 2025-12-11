@@ -135,33 +135,25 @@ class ArticulatedKSModel(KSModel):
         new_state.speed = np.clip(speed, *self.speed_range)
         new_state.steering = np.clip(steer, *self.angle_range)
 
-        # In active articulation, steering input controls the articulation angle (gamma) directly
-        gamma = new_state.steering
-        v = new_state.speed
-        Lf = self.hitch_offset
-        Lr = self.trailer_length
-
+        # Bicycle Model Kinematics
         for _ in range(step_time):
             for _ in range(self.mini_iter):
-                # Calculate angular velocity of the front body
-                # omega = v * sin(gamma) / (Lf * cos(gamma) + Lr)
-                denom = Lf * np.cos(gamma) + Lr
-                if abs(denom) < 1e-6: denom = 1e-6
-                omega = v * np.sin(gamma) / denom
-
-                # Update front heading
-                new_state.heading += omega * self.step_len / self.mini_iter
+                # Update heading first
+                new_state.heading += new_state.speed * np.tan(new_state.steering) / self.wheel_base * self.step_len / self.mini_iter
                 
-                # Update front position (Front Axle)
+                # Update position using new heading
                 new_state.loc = Point(
-                    new_state.loc.x + v * np.cos(new_state.heading) * self.step_len / self.mini_iter,
-                    new_state.loc.y + v * np.sin(new_state.heading) * self.step_len / self.mini_iter
+                    new_state.loc.x + new_state.speed * np.cos(new_state.heading) * self.step_len / self.mini_iter,
+                    new_state.loc.y + new_state.speed * np.sin(new_state.heading) * self.step_len / self.mini_iter
                 )
 
-        # Update rear heading based on fixed constraint: theta_r = theta_f - gamma
-        new_state.rear_heading = new_state.heading - gamma
+        # For a rigid vehicle (bicycle model), rear_heading is the same as heading
+        new_state.rear_heading = new_state.heading
 
-        # Update trailer_loc (Rear Axle position) for observation/reference
+        # Update trailer_loc based on rigid body geometry (gamma=0)
+        Lf = self.hitch_offset
+        Lr = self.trailer_length
+        
         # Hinge position
         hx = new_state.loc.x - Lf * np.cos(new_state.heading)
         hy = new_state.loc.y - Lf * np.sin(new_state.heading)

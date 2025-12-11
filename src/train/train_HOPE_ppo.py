@@ -25,9 +25,9 @@ class SceneChoose():
         self.scene_types = {0:'Normal', 
                             1:'Complex',
                             2:'Extrem',
-                            3:'dlp',
+                            # 3:'dlp', # Disable dlp scene
                             }
-        self.target_success_rate = np.array([0.95, 0.95, 0.9, 0.99])
+        self.target_success_rate = np.array([0.95, 0.95, 0.9]) # Removed dlp target rate
         self.success_record = {}
         for scene_name in self.scene_types:
             self.success_record[scene_name] = []
@@ -105,7 +105,7 @@ if __name__=="__main__":
     parser.add_argument('--train_episode', type=int, default=100000)
     parser.add_argument('--eval_episode', type=int, default=2000)
     parser.add_argument('--verbose', type=bool, default=True)
-    parser.add_argument('--visualize', type=bool, default=True)
+    parser.add_argument('--visualize', type=bool, default=False)
     args = parser.parse_args()
 
     verbose = args.verbose
@@ -171,7 +171,7 @@ if __name__=="__main__":
     reward_info_list = []
     case_id_list = []
     succ_record = []
-    best_success_rate = [0, 0, 0, 0]
+    best_success_rate = [0, 0, 0]
 
     for i in range(args.train_episode):
         scene_chosen = scene_chooser.choose_case()
@@ -258,18 +258,15 @@ if __name__=="__main__":
                 success_rate_extreme = np.mean(scene_chooser.success_record[2][-100:])
             else:
                 success_rate_extreme = 0
-            if len(scene_chooser.success_record[3]) > 0:
-                success_rate_dlp = np.mean(scene_chooser.success_record[3][-100:])
-            else:
-                success_rate_dlp = 0
+            
         if success_rate_normal >= best_success_rate[0] and success_rate_complex >= best_success_rate[1] and\
-            success_rate_extreme >= best_success_rate[2] and success_rate_dlp >= best_success_rate[3] and i>100:
-            raw_best_success_rate = np.array([success_rate_normal, success_rate_complex, success_rate_extreme, success_rate_dlp])
+            success_rate_extreme >= best_success_rate[2] and i>100:
+            raw_best_success_rate = np.array([success_rate_normal, success_rate_complex, success_rate_extreme])
             best_success_rate = list(np.minimum(raw_best_success_rate, scene_chooser.target_success_rate))
             parking_agent.save("%s/PPO_best.pt" % (save_path),params_only=True)
             f_best_log = open(save_path+'best.txt', 'w')
-            f_best_log.write('epoch: %s, success rate: %s %s %s %s'%(i+1, raw_best_success_rate[0],
-                                raw_best_success_rate[1], raw_best_success_rate[2], raw_best_success_rate[3]))
+            f_best_log.write('epoch: %s, success rate: %s %s %s'%(i+1, raw_best_success_rate[0],
+                                raw_best_success_rate[1], raw_best_success_rate[2]))
             f_best_log.close()
         if (i+1) % 2000 == 0:
             parking_agent.save("%s/PPO2_%s.pt" % (save_path, i),params_only=True)
@@ -289,13 +286,6 @@ if __name__=="__main__":
     eval_episode = args.eval_episode
     choose_action = True
     with torch.no_grad():
-        # eval on dlp
-        env.set_level('dlp')
-        log_path = save_path+'/dlp'
-        if not os.path.exists(log_path):
-            os.makedirs(log_path)
-        eval(env, parking_agent, episode=eval_episode, log_path=log_path, post_proc_action=choose_action)
-        
         # eval on extreme
         env.set_level('Extrem')
         log_path = save_path+'/extreme'

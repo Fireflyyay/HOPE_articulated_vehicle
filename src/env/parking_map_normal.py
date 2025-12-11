@@ -456,6 +456,57 @@ def generate_parallel_parking_case(map_level):
     else:
         return generate_parallel_parking_case(map_level)
 
+def generate_navigation_case(map_level):
+    '''
+    Generate navigation case with sparse obstacles in a 200x200m area.
+    '''
+    map_half_len = 100.0 # 200m x 200m
+    
+    # Generate start and dest far apart
+    min_dist = 50.0
+    while True:
+        start_x = random_uniform_num(-map_half_len + 10, map_half_len - 10)
+        start_y = random_uniform_num(-map_half_len + 10, map_half_len - 10)
+        dest_x = random_uniform_num(-map_half_len + 10, map_half_len - 10)
+        dest_y = random_uniform_num(-map_half_len + 10, map_half_len - 10)
+        if np.hypot(start_x - dest_x, start_y - dest_y) > min_dist:
+            break
+            
+    start_yaw = random_uniform_num(-pi, pi)
+    dest_yaw = random_uniform_num(-pi, pi)
+    
+    obstacles = []
+    # Sparse obstacles
+    n_obstacles = 15 # Sparse for 200x200 area
+    for _ in range(n_obstacles):
+        obs_x = random_uniform_num(-map_half_len + 5, map_half_len - 5)
+        obs_y = random_uniform_num(-map_half_len + 5, map_half_len - 5)
+        obs_yaw = random_uniform_num(-pi, pi)
+        
+        # Check distance to start/dest
+        if np.hypot(obs_x - start_x, obs_y - start_y) < 10.0 or \
+           np.hypot(obs_x - dest_x, obs_y - dest_y) < 10.0:
+            continue
+            
+        # Create random box obstacle
+        obs_w = random_uniform_num(2.0, 5.0)
+        obs_h = random_uniform_num(2.0, 5.0)
+        
+        # Create box points
+        cx, cy = obs_x, obs_y
+        angle = obs_yaw
+        cos_a, sin_a = np.cos(angle), np.sin(angle)
+        
+        pts = [
+            (cx + (obs_w/2)*cos_a - (obs_h/2)*sin_a, cy + (obs_w/2)*sin_a + (obs_h/2)*cos_a),
+            (cx - (obs_w/2)*cos_a - (obs_h/2)*sin_a, cy - (obs_w/2)*sin_a + (obs_h/2)*cos_a),
+            (cx - (obs_w/2)*cos_a + (obs_h/2)*sin_a, cy - (obs_w/2)*sin_a - (obs_h/2)*cos_a),
+            (cx + (obs_w/2)*cos_a + (obs_h/2)*sin_a, cy + (obs_w/2)*sin_a - (obs_h/2)*cos_a)
+        ]
+        obstacles.append(LinearRing(pts))
+        
+    return [start_x, start_y, start_yaw], [dest_x, dest_y, dest_yaw], obstacles
+
 
 class ParkingMapNormal(object):
     def __init__(self, map_level=MAP_LEVEL):
@@ -472,21 +523,21 @@ class ParkingMapNormal(object):
         self.obstacles:List[Area] = []
 
     def reset(self, case_id: int = None, path: str = None) -> State:
-        if (case_id == 0 or (random() > 0.5 and case_id != 1)) and self.map_level in ["Normal", "Complex"]:
-            start, dest, obstacles = generate_bay_parking_case(self.map_level)
-            self.case_id = 0
-        else:
-            start, dest, obstacles = generate_parallel_parking_case(self.map_level)
-            self.case_id = 1
+        # Always use navigation case for the new task
+        start, dest, obstacles = generate_navigation_case(self.map_level)
+        self.case_id = 2
         
         self.start = State(start+[0,0])
         self.start_box = self.start.create_box()
         self.dest = State(dest+[0,0])
         self.dest_box = self.dest.create_box()
-        self.xmin = np.floor(min(self.start.loc.x, self.dest.loc.x) - 10)
-        self.xmax = np.ceil(max(self.start.loc.x, self.dest.loc.x) + 10)
-        self.ymin = np.floor(min(self.start.loc.y, self.dest.loc.y) - 10)
-        self.ymax = np.ceil(max(self.start.loc.y, self.dest.loc.y) + 10)
+        
+        # Set map boundaries to 200x200m (-100 to 100)
+        self.xmin = -100.0
+        self.xmax = 100.0
+        self.ymin = -100.0
+        self.ymax = 100.0
+        
         self.obstacles = list([Area(shape=obs, subtype="obstacle", \
             color=(150, 150, 150, 255)) for obs in obstacles])
         self.n_obstacle = len(self.obstacles)

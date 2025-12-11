@@ -10,13 +10,13 @@ SEED = 42
 
 #########################
 # vehicle
-WHEEL_BASE = 2.8  # wheelbase
-FRONT_HANG = 0.96  # front hang length
-REAR_HANG = 0.93  # rear hang length
-LENGTH = WHEEL_BASE+FRONT_HANG+REAR_HANG
-WIDTH = 1.94  # width
-TRAILER_LENGTH = 3.0
-HITCH_OFFSET = 0.5
+WHEEL_BASE = 4.0  # wheelbase (HITCH_OFFSET + TRAILER_LENGTH)
+FRONT_HANG = 2.5  # front hang length
+REAR_HANG = 3.0  # rear hang length
+WIDTH = 3.0  # width
+TRAILER_LENGTH = 2.0
+HITCH_OFFSET = 2.0
+LENGTH = FRONT_HANG + WHEEL_BASE + REAR_HANG  # total length
 
 from shapely.geometry import LinearRing
 VehicleBox = LinearRing([
@@ -41,7 +41,7 @@ STEP_LENGTH = 5e-2
 
 ########################
 # senerio
-MAP_LEVEL = 'Normal' # ['Normal', 'Complex', 'Extrem', 'dlp']
+MAP_LEVEL = 'Normal' # ['Normal', 'Complex', 'Extrem']
 MIN_PARK_LOT_LEN_DICT = {'Extrem':LENGTH+0.6,
                             'Complex':LENGTH+0.9,
                             'Normal':LENGTH*1.25,}
@@ -73,7 +73,7 @@ N_OBSTACLE_DICT = {
 
 # Normal level
 MIN_DIST_TO_OBST = 0.1
-MAX_DRIVE_DISTANCE = 15.0
+MAX_DRIVE_DISTANCE = 100.0
 DROUP_OUT_OBST = 0.0
 
 #########################
@@ -94,16 +94,16 @@ VIDEO_W = 600
 VIDEO_H = 400
 WIN_W = 500
 WIN_H = 500
-LIDAR_RANGE = 10.0
+LIDAR_RANGE = 300.0
 LIDAR_NUM = 120
 FPS = 100
-TOLERANT_TIME = 200
+TOLERANT_TIME = 2000
 USE_LIDAR = True
 USE_IMG = True
-USE_ACTION_MASK = False # Modified later
-MAX_DIST_TO_DEST = 20
-K = 12 # the render scale
-RS_MAX_DIST = 10
+USE_ACTION_MASK = True
+MAX_DIST_TO_DEST = 200
+K = 1.25 # the render scale (250px / 200m = 1.25)
+RS_MAX_DIST = 50
 RENDER_TRAJ = True
 
 # action mask
@@ -119,7 +119,7 @@ N_DISCRETE_ACTION = len(discrete_actions)
 #########################
 # model
 GAMMA = 0.98
-BATCH_SIZE = 32  # Batch size is originally 8192
+BATCH_SIZE = 2048  # Batch size is originally 8192
 LR = 5e-6
 TAU = 0.1
 MAX_TRAIN_STEP = 1e6

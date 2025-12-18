@@ -80,6 +80,11 @@ class CarParking(gym.Env):
         self.reward = 0.0
         self.prev_reward = 0.0
         self.accum_arrive_reward = 0.0
+        
+        # Tracking variables for new penalties
+        self.accum_turn_count = 0
+        self.accum_turn_degree = 0.0
+        self.accum_dist = 0.0
 
         self.action_space = spaces.Box(
             np.array([VALID_STEER[0], VALID_SPEED[0]]).astype(np.float32),
@@ -129,6 +134,10 @@ class CarParking(gym.Env):
         self.prev_reward = 0.0
         self.accum_arrive_reward = 0.0
         self.t = 0.0
+        
+        self.accum_turn_count = 0
+        self.accum_turn_degree = 0.0
+        self.accum_dist = 0.0
 
         if level is not None:
             self.set_level(level)
@@ -227,9 +236,17 @@ class CarParking(gym.Env):
         return [time_cost ,rs_dist_reward ,dist_reward ,angle_reward ,box_union_reward]
         
     def get_reward(self, status, prev_state):
-        reward_info = [0,0,0,0,0]
+        reward_info = [0,0,0,0,0,0,0]
         if status == Status.CONTINUE:
-            reward_info = self._get_reward(prev_state, self.vehicle.state)
+            reward_info[:5] = self._get_reward(prev_state, self.vehicle.state)
+        
+        if status == Status.OUTBOUND:
+            reward_info[5] = -1
+
+        if status in [Status.ARRIVED, Status.COLLIDED, Status.OUTBOUND, Status.OUTTIME]:
+            if self.accum_dist > 0.1:
+                penalty = (self.accum_turn_count * self.accum_turn_degree) / self.accum_dist
+                reward_info[6] = -penalty
         return reward_info
 
     def step(self, action:np.ndarray = None):
@@ -256,8 +273,19 @@ class CarParking(gym.Env):
         collide = False
         arrive = False
         if action is not None:
+            steer = action[0]
+            is_turning = abs(steer) > 1e-3
+
             for simu_step_num in range(NUM_STEP):
                 prev_info = self.vehicle.step(action,step_time=1)
+                
+                # Update accumulators
+                step_dist = self.vehicle.state.loc.distance(prev_info[0].loc)
+                self.accum_dist += step_dist
+                if is_turning:
+                    self.accum_turn_count += 1
+                    self.accum_turn_degree += abs(steer)
+
                 if self._check_arrived():
                     arrive = True
                     break
@@ -286,7 +314,9 @@ class CarParking(gym.Env):
             'rs_dist_reward':reward_list[1],\
             'dist_reward':reward_list[2],\
             'angle_reward':reward_list[3],\
-            'box_union_reward':reward_list[4],})
+            'box_union_reward':reward_list[4],\
+            'out_of_map_penalty':reward_list[5],\
+            'turn_penalty':reward_list[6],})
 
         info = OrderedDict({'reward_info':reward_info,
             'path_to_dest':None})

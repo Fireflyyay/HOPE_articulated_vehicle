@@ -143,13 +143,16 @@ class PPOAgent(AgentBase):
             
         return dist
     
-    def _post_process_action(self, action_dist:torch.distributions.Distribution , action_mask=None): # to be replaced
+    def _post_process_action(self, action_dist:torch.distributions.Distribution , action_mask=None, deterministic=False): # to be replaced
         if action_mask is not None:
             mean, std = action_dist.mean, action_dist.stddev
-            action = self.action_filter.choose_action(mean, std, action_mask)
+            action = self.action_filter.choose_action(mean, std, action_mask, deterministic)
             action = torch.FloatTensor(action).to(self.device)
         else:
-            action = action_dist.sample()
+            if deterministic:
+                action = action_dist.mean
+            else:
+                action = action_dist.sample()
 
         if not self.discrete and self.configs.dist_type == "gaussian":
                 action = torch.clamp(action, -1, 1)
@@ -159,11 +162,11 @@ class PPOAgent(AgentBase):
         return action, log_prob
 
 
-    def choose_action(self, obs):
+    def choose_action(self, obs, deterministic=False):
 
         dist = self._actor_forward(obs)
         action_mask = obs['action_mask']
-        action, other_info = self._post_process_action(dist, action_mask)
+        action, other_info = self._post_process_action(dist, action_mask, deterministic)
                 
         return action, other_info
 

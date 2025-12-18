@@ -75,7 +75,7 @@ class ParkingAgent(object):
     def get_log_prob(self, obs, action):
         return self.agent.get_log_prob(obs, action)
 
-    def choose_action(self, obs):
+    def choose_action(self, obs, deterministic=False):
         '''
         Get the fused decision from the planner and the agent.
         The action is clipped to the range of the safe action space using action mask.
@@ -88,7 +88,7 @@ class ParkingAgent(object):
             other: the other information, such as the log_prob of the action in case of PPO
         '''
         if not self.executing_rs:
-            return self.agent.choose_action(obs)
+            return self.agent.choose_action(obs, deterministic)
         else:
             action = self.planner.get_action()
             log_prob = self.agent.get_log_prob(obs, action)

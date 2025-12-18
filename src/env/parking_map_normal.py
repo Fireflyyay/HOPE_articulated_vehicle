@@ -460,27 +460,65 @@ def generate_navigation_case(map_level):
     '''
     Generate navigation case with sparse obstacles in a 200x200m area.
     '''
-    map_half_len = 100.0 # 200m x 200m
+    # Define boundary walls
+    # Randomly generate straight walls in the scene periphery (-100, -50) (50, 100)
+    min_x = random_uniform_num(-100, -50)
+    max_x = random_uniform_num(50, 100)
+    min_y = random_uniform_num(-100, -50)
+    max_y = random_uniform_num(50, 100)
     
-    # Generate start and dest far apart
+    obstacles = []
+    wall_thickness = 2.0
+    
+    # Create 4 walls
+    # Top wall
+    obstacles.append(LinearRing([
+        (min_x - wall_thickness, max_y),
+        (max_x + wall_thickness, max_y),
+        (max_x + wall_thickness, max_y + wall_thickness),
+        (min_x - wall_thickness, max_y + wall_thickness)
+    ]))
+    # Bottom wall
+    obstacles.append(LinearRing([
+        (min_x - wall_thickness, min_y - wall_thickness),
+        (max_x + wall_thickness, min_y - wall_thickness),
+        (max_x + wall_thickness, min_y),
+        (min_x - wall_thickness, min_y)
+    ]))
+    # Left wall
+    obstacles.append(LinearRing([
+        (min_x - wall_thickness, min_y),
+        (min_x, min_y),
+        (min_x, max_y),
+        (min_x - wall_thickness, max_y)
+    ]))
+    # Right wall
+    obstacles.append(LinearRing([
+        (max_x, min_y),
+        (max_x + wall_thickness, min_y),
+        (max_x + wall_thickness, max_y),
+        (max_x, max_y)
+    ]))
+
+    # Generate start and dest inside the walls
+    margin = 10.0
     min_dist = 50.0
     while True:
-        start_x = random_uniform_num(-map_half_len + 10, map_half_len - 10)
-        start_y = random_uniform_num(-map_half_len + 10, map_half_len - 10)
-        dest_x = random_uniform_num(-map_half_len + 10, map_half_len - 10)
-        dest_y = random_uniform_num(-map_half_len + 10, map_half_len - 10)
+        start_x = random_uniform_num(min_x + margin, max_x - margin)
+        start_y = random_uniform_num(min_y + margin, max_y - margin)
+        dest_x = random_uniform_num(min_x + margin, max_x - margin)
+        dest_y = random_uniform_num(min_y + margin, max_y - margin)
         if np.hypot(start_x - dest_x, start_y - dest_y) > min_dist:
             break
             
     start_yaw = random_uniform_num(-pi, pi)
     dest_yaw = random_uniform_num(-pi, pi)
     
-    obstacles = []
     # Sparse obstacles
-    n_obstacles = 15 # Sparse for 200x200 area
+    n_obstacles = 25 # Increased number of obstacles
     for _ in range(n_obstacles):
-        obs_x = random_uniform_num(-map_half_len + 5, map_half_len - 5)
-        obs_y = random_uniform_num(-map_half_len + 5, map_half_len - 5)
+        obs_x = random_uniform_num(min_x + 5, max_x - 5)
+        obs_y = random_uniform_num(min_y + 5, max_y - 5)
         obs_yaw = random_uniform_num(-pi, pi)
         
         # Check distance to start/dest
@@ -488,9 +526,9 @@ def generate_navigation_case(map_level):
            np.hypot(obs_x - dest_x, obs_y - dest_y) < 10.0:
             continue
             
-        # Create random box obstacle
-        obs_w = random_uniform_num(2.0, 5.0)
-        obs_h = random_uniform_num(2.0, 5.0)
+        # Create random box obstacle - Increased size
+        obs_w = random_uniform_num(4.0, 8.0)
+        obs_h = random_uniform_num(4.0, 8.0)
         
         # Create box points
         cx, cy = obs_x, obs_y

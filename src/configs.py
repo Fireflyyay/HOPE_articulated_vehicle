@@ -32,7 +32,7 @@ COLOR_POOL = [
 ]
 
 VALID_SPEED = [-2.5, 2.5]
-VALID_STEER = [-0.75, 0.75]
+VALID_STEER = [-np.radians(36), np.radians(36)]
 VALID_ACCEL = [-1.0, 1.0]
 VALID_ANGULAR_SPEED = [-0.5, 0.5]
 
@@ -186,7 +186,9 @@ REWARD_WEIGHT = OrderedDict({'time_cost':1,\
             'rs_dist_reward':0,\
             'dist_reward':5,\
             'angle_reward':0,\
-            'box_union_reward':10,})
+            'box_union_reward':10,\
+            'out_of_map_penalty':10,\
+            'turn_penalty':0.0001,})
 
 
 CONFIGS_ACTION = {
@@ -197,3 +199,5 @@ CONFIGS_ACTION = {
     'n_action':len(discrete_actions),
     'discrete_actions':discrete_actions
 }
+
+VISUALIZATION_NUM = 10

@@ -15,18 +15,22 @@ def reward_shaping(*args):
 
     '''
     obs, reward_info, status, info = args
-    if status == Status.CONTINUE:
-        reward = 0
-        for reward_type in REWARD_WEIGHT.keys():
+    
+    reward = 0
+    for reward_type in REWARD_WEIGHT.keys():
+        if reward_type in reward_info:
             reward += REWARD_WEIGHT[reward_type]*reward_info[reward_type]
+
+    if status == Status.CONTINUE:
+        pass
     elif status == Status.OUTBOUND:
-        reward = -50
+        pass
     elif status == Status.OUTTIME:
-        reward = -1
+        reward += -1
     elif status == Status.ARRIVED:
-        reward = 50
+        reward += 50
     elif status == Status.COLLIDED:
-        reward = -50
+        reward += -50
     else:
         print(status)
         print('Never reach here !!!')

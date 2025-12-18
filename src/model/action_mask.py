@@ -196,7 +196,7 @@ class ActionMask():
         return np.clip(np.concatenate((forward_step_len_, backward_step_len_)), 0, self.n_iter)/self.n_iter
     
     
-    def choose_action(self, action_mean, action_std, action_mask):
+    def choose_action(self, action_mean, action_std, action_mask, deterministic=False):
 
         if isinstance(action_mean, torch.Tensor):
             action_mean = action_mean.cpu().numpy()
@@ -223,5 +223,9 @@ class ActionMask():
         exp_prob = np.exp(prob) * action_mask
         prob_softmax = exp_prob / np.sum(exp_prob)
         actions = np.arange(len(possible_actions))
-        action_chosen = np.random.choice(actions, p=prob_softmax)
+        
+        if deterministic:
+            action_chosen = np.argmax(prob_softmax)
+        else:
+            action_chosen = np.random.choice(actions, p=prob_softmax)
         return possible_actions[action_chosen]

@@ -19,3 +19,6 @@ __pycache__
 
 # mac
 .DS_store
+
+debug_obs_training.jsonl
+

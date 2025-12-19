@@ -81,10 +81,25 @@ class CarParkingWrapper(Wrapper):
         returns = self.env.step(action)
         obs, reward, status, info = self.reward_func(*returns)
         obs = self.obs_func(obs)
+        
+        # DEBUG: Dump observation to file
+        import json
+        debug_obs = {k: v.tolist() if isinstance(v, np.ndarray) else v for k, v in obs.items()}
+        with open('debug_obs_training.jsonl', 'a') as f:
+            f.write(json.dumps(debug_obs) + '\n')
+            
         done = False if status==Status.CONTINUE else True
         return obs, reward, done, info
 
     def reset(self, *args):
         obs = self.env.reset(*args)
-        return self.obs_func(obs)
+        obs = self.obs_func(obs)
+        
+        # DEBUG: Dump observation to file
+        import json
+        debug_obs = {k: v.tolist() if isinstance(v, np.ndarray) else v for k, v in obs.items()}
+        with open('debug_obs_training.jsonl', 'a') as f:
+            f.write(json.dumps(debug_obs) + '\n')
+            
+        return obs
 

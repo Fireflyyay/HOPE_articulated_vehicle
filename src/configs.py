@@ -57,13 +57,13 @@ MAX_PARK_LOT_WIDTH_DICT = {
     'Normal':WIDTH+1.2,
 }
 PARA_PARK_WALL_DIST_DICT = {
-    'Extrem':3.5,
-    'Complex':4.0,
-    'Normal':4.5,
+    'Extrem':15.0,
+    'Complex':20.0,
+    'Normal':25.0,
 }
 BAY_PARK_WALL_DIST_DICT = {
-    'Complex':6.0,
-    'Normal':7.0,
+    'Complex':20.0,
+    'Normal':25.0,
 }
 N_OBSTACLE_DICT = {
     'Extrem':8,
@@ -73,7 +73,7 @@ N_OBSTACLE_DICT = {
 
 # Normal level
 MIN_DIST_TO_OBST = 0.1
-MAX_DRIVE_DISTANCE = 100.0
+MAX_DRIVE_DISTANCE = 300.0
 DROUP_OUT_OBST = 0.0
 
 #########################

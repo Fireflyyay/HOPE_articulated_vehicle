@@ -62,6 +62,7 @@ PARA_PARK_WALL_DIST_DICT = {
     'Normal':25.0,
 }
 BAY_PARK_WALL_DIST_DICT = {
+    'Extrem':15.0,
     'Complex':20.0,
     'Normal':25.0,
 }
@@ -73,7 +74,7 @@ N_OBSTACLE_DICT = {
 
 # Normal level
 MIN_DIST_TO_OBST = 0.1
-MAX_DRIVE_DISTANCE = 300.0
+MAX_DRIVE_DISTANCE = 150.0
 DROUP_OUT_OBST = 0.0
 
 #########################
@@ -94,15 +95,15 @@ VIDEO_W = 600
 VIDEO_H = 400
 WIN_W = 500
 WIN_H = 500
-LIDAR_RANGE = 300.0
+LIDAR_RANGE = 30.0
 LIDAR_NUM = 120
 FPS = 100
-TOLERANT_TIME = 2000
+TOLERANT_TIME = 1000
 USE_LIDAR = True
 USE_IMG = True
 USE_ACTION_MASK = True
 MAX_DIST_TO_DEST = 200
-K = 1.25 # the render scale (250px / 200m = 1.25)
+K = 3.0 # the render scale (240px / 80m = 3.0)
 RS_MAX_DIST = 50
 RENDER_TRAJ = True
 

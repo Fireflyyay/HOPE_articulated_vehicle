@@ -7,7 +7,7 @@ import os
 import numpy as np
 from numpy.random import randn, random
 from typing import List
-from shapely.geometry import LinearRing
+from shapely.geometry import LinearRing, Point, MultiPoint, Polygon, LineString
 
 from env.vehicle import State
 from env.map_base import *
@@ -61,8 +61,8 @@ def generate_bay_parking_case(map_level):
     # generate obstacle on back
     obstacle_back = LinearRing(( 
         (origin[0]+bay_half_len, origin[1]),
-        (origin[0]+bay_half_len, origin[1]-1), 
-        (origin[0]-bay_half_len, origin[1]-1), 
+        (origin[0]+bay_half_len, origin[1]-3), 
+        (origin[0]-bay_half_len, origin[1]-3), 
         (origin[0]-bay_half_len, origin[1])))
     
     if DEBUG:
@@ -181,7 +181,7 @@ def generate_bay_parking_case(map_level):
             obs_y = random_uniform_num(*valid_obst_y_range)
             obs_yaw = random()*pi*2
             obs_coords = np.array(State([obs_x, obs_y, obs_yaw, 0, 0]).create_box().coords[:-1])
-            obs = LinearRing(obs_coords+0.5*random(obs_coords.shape))
+            obs = LinearRing(obs_coords+2.0*random(obs_coords.shape))
             if obs.intersects(other_obstacle_range):
                 continue
             obst_invalid = False
@@ -204,13 +204,30 @@ def generate_bay_parking_case(map_level):
     # generate start position
     start_box_valid = False
     valid_start_x_range = (origin[0]-bay_half_len/2, origin[0]+bay_half_len/2)
-    valid_start_y_range = (max_obstacle_y+1, bay_PARK_WALL_DIST+max_obstacle_y-1)
+    
+    if map_level == 'Complex':
+        valid_start_y_range = (max_obstacle_y+1, max_obstacle_y+1 + (bay_PARK_WALL_DIST-1)*0.6)
+    elif map_level == 'Extrem':
+        valid_start_y_range = (max_obstacle_y+1, max_obstacle_y+1 + (bay_PARK_WALL_DIST-1)*0.3)
+    else:
+        valid_start_y_range = (max_obstacle_y+1, bay_PARK_WALL_DIST+max_obstacle_y-1)
+
     while not start_box_valid:
         start_box_valid = True
         start_x = random_uniform_num(*valid_start_x_range)
         start_y = random_uniform_num(*valid_start_y_range)
-        start_yaw = random_gaussian_num(0, pi/6, -pi/2, pi/2)
-        start_yaw = start_yaw+pi if random()<0.5 else start_yaw
+        
+        if map_level == 'Complex':
+            base_yaw = dest_yaw - pi/2
+            if random() < 0.5:
+                base_yaw += pi
+            start_yaw = random_gaussian_num(base_yaw, pi/12, base_yaw-pi/6, base_yaw+pi/6)
+        elif map_level == 'Extrem':
+            base_yaw = dest_yaw + pi
+            start_yaw = random_gaussian_num(base_yaw, pi/12, base_yaw-pi/6, base_yaw+pi/6)
+        else:
+            start_yaw = random_gaussian_num(0, pi/6, -pi/2, pi/2)
+            start_yaw = start_yaw+pi if random()<0.5 else start_yaw
         start_box = State([start_x, start_y, start_yaw, 0, 0]).create_box()
         # check collision
         for obst in obstacles:
@@ -269,8 +286,8 @@ def generate_parallel_parking_case(map_level):
     # generate obstacle on back
     obstacle_back = LinearRing(( 
         (origin[0]+bay_half_len, origin[1]),
-        (origin[0]+bay_half_len, origin[1]-1), 
-        (origin[0]-bay_half_len, origin[1]-1), 
+        (origin[0]+bay_half_len, origin[1]-3), 
+        (origin[0]-bay_half_len, origin[1]-3), 
         (origin[0]-bay_half_len, origin[1])))
     
     if DEBUG:
@@ -390,7 +407,7 @@ def generate_parallel_parking_case(map_level):
             obs_y = random_uniform_num(*valid_obst_y_range)
             obs_yaw = random()*pi*2
             obs_coords = np.array(State([obs_x, obs_y, obs_yaw, 0, 0]).create_box().coords[:-1])
-            obs = LinearRing(obs_coords+0.5*random(obs_coords.shape))
+            obs = LinearRing(obs_coords+2.0*random(obs_coords.shape))
             if obs.intersects(other_obstacle_range):
                 continue
             obst_invalid = False
@@ -413,13 +430,30 @@ def generate_parallel_parking_case(map_level):
     # generate start position
     start_box_valid = False
     valid_start_x_range = (origin[0]-bay_half_len/2, origin[0]+bay_half_len/2)
-    valid_start_y_range = (max_obstacle_y+1, para_PARK_WALL_DIST+max_obstacle_y-1)
+    
+    if map_level == 'Complex':
+        valid_start_y_range = (max_obstacle_y+1, max_obstacle_y+1 + (para_PARK_WALL_DIST-1)*0.6)
+    elif map_level == 'Extrem':
+        valid_start_y_range = (max_obstacle_y+1, max_obstacle_y+1 + (para_PARK_WALL_DIST-1)*0.3)
+    else:
+        valid_start_y_range = (max_obstacle_y+1, para_PARK_WALL_DIST+max_obstacle_y-1)
+
     while not start_box_valid:
         start_box_valid = True
         start_x = random_uniform_num(*valid_start_x_range)
         start_y = random_uniform_num(*valid_start_y_range)
-        start_yaw = random_gaussian_num(0, pi/6, -pi/2, pi/2)
-        start_yaw = start_yaw+pi if random()<0.5 else start_yaw
+        
+        if map_level == 'Complex':
+            base_yaw = dest_yaw - pi/2
+            if random() < 0.5:
+                base_yaw += pi
+            start_yaw = random_gaussian_num(base_yaw, pi/12, base_yaw-pi/6, base_yaw+pi/6)
+        elif map_level == 'Extrem':
+            base_yaw = dest_yaw + pi
+            start_yaw = random_gaussian_num(base_yaw, pi/12, base_yaw-pi/6, base_yaw+pi/6)
+        else:
+            start_yaw = random_gaussian_num(0, pi/6, -pi/2, pi/2)
+            start_yaw = start_yaw+pi if random()<0.5 else start_yaw
         start_box = State([start_x, start_y, start_yaw, 0, 0]).create_box()
         # check collision
         for obst in obstacles:
@@ -458,79 +492,131 @@ def generate_parallel_parking_case(map_level):
 
 def generate_navigation_case(map_level):
     '''
-    Generate navigation case with sparse obstacles in a 200x200m area.
+    Generate navigation case with polygon walls and gaps in a 80x80m area.
     '''
-    # Define boundary walls
-    # Randomly generate straight walls in the scene periphery (-100, -50) (50, 100)
-    min_x = random_uniform_num(-100, -50)
-    max_x = random_uniform_num(50, 100)
-    min_y = random_uniform_num(-100, -50)
-    max_y = random_uniform_num(50, 100)
+    # Map boundaries
+    min_bound = -40.0
+    max_bound = 40.0
     
     obstacles = []
     wall_thickness = 2.0
     
-    # Create 4 walls
-    # Top wall
-    obstacles.append(LinearRing([
-        (min_x - wall_thickness, max_y),
-        (max_x + wall_thickness, max_y),
-        (max_x + wall_thickness, max_y + wall_thickness),
-        (min_x - wall_thickness, max_y + wall_thickness)
-    ]))
-    # Bottom wall
-    obstacles.append(LinearRing([
-        (min_x - wall_thickness, min_y - wall_thickness),
-        (max_x + wall_thickness, min_y - wall_thickness),
-        (max_x + wall_thickness, min_y),
-        (min_x - wall_thickness, min_y)
-    ]))
-    # Left wall
-    obstacles.append(LinearRing([
-        (min_x - wall_thickness, min_y),
-        (min_x, min_y),
-        (min_x, max_y),
-        (min_x - wall_thickness, max_y)
-    ]))
-    # Right wall
-    obstacles.append(LinearRing([
-        (max_x, min_y),
-        (max_x + wall_thickness, min_y),
-        (max_x + wall_thickness, max_y),
-        (max_x, max_y)
-    ]))
+    # Generate random polygon vertices (convex hull of random points)
+    n_points = np.random.randint(5, 9)
+    points = []
+    for _ in range(n_points):
+        # Keep some margin from the absolute boundary
+        x = random_uniform_num(min_bound + 5, max_bound - 5)
+        y = random_uniform_num(min_bound + 5, max_bound - 5)
+        points.append((x, y))
+    
+    # Create convex hull
+    polygon = MultiPoint(points).convex_hull
+    
+    # Ensure it's a Polygon (not a LineString or Point if points are collinear)
+    if not isinstance(polygon, Polygon):
+        # Fallback to a simple box if generation fails
+        polygon = Polygon([
+            (min_bound+5, min_bound+5), (max_bound-5, min_bound+5),
+            (max_bound-5, max_bound-5), (min_bound+5, max_bound-5)
+        ])
 
-    # Generate start and dest inside the walls
-    margin = 10.0
-    min_dist = 50.0
+    # Create walls from edges with gaps
+    exterior_coords = list(polygon.exterior.coords)
+    for i in range(len(exterior_coords) - 1):
+        p1 = np.array(exterior_coords[i])
+        p2 = np.array(exterior_coords[i+1])
+        
+        edge_vec = p2 - p1
+        edge_len = np.linalg.norm(edge_vec)
+        edge_dir = edge_vec / edge_len
+        normal_dir = np.array([-edge_dir[1], edge_dir[0]])
+        
+        # Randomly decide to add a gap
+        if random() < 0.7: # 70% chance of gap
+            gap_size = random_uniform_num(4.0, 8.0)
+            if edge_len > gap_size + 4.0: # Ensure edge is long enough
+                # Split into two segments
+                split_point = random_uniform_num(2.0, edge_len - gap_size - 2.0)
+                
+                # Segment 1
+                seg1_start = p1
+                seg1_end = p1 + edge_dir * split_point
+                
+                # Segment 2
+                seg2_start = p1 + edge_dir * (split_point + gap_size)
+                seg2_end = p2
+                
+                # Create wall boxes for segments
+                for start, end in [(seg1_start, seg1_end), (seg2_start, seg2_end)]:
+                    # Create a box around the line segment
+                    # Offset by wall_thickness/2 in normal direction
+                    w_p1 = start + normal_dir * (wall_thickness/2)
+                    w_p2 = end + normal_dir * (wall_thickness/2)
+                    w_p3 = end - normal_dir * (wall_thickness/2)
+                    w_p4 = start - normal_dir * (wall_thickness/2)
+                    obstacles.append(LinearRing([tuple(w_p1), tuple(w_p2), tuple(w_p3), tuple(w_p4)]))
+            else:
+                # Edge too short for gap, just build full wall
+                w_p1 = p1 + normal_dir * (wall_thickness/2)
+                w_p2 = p2 + normal_dir * (wall_thickness/2)
+                w_p3 = p2 - normal_dir * (wall_thickness/2)
+                w_p4 = p1 - normal_dir * (wall_thickness/2)
+                obstacles.append(LinearRing([tuple(w_p1), tuple(w_p2), tuple(w_p3), tuple(w_p4)]))
+        else:
+            # No gap
+            w_p1 = p1 + normal_dir * (wall_thickness/2)
+            w_p2 = p2 + normal_dir * (wall_thickness/2)
+            w_p3 = p2 - normal_dir * (wall_thickness/2)
+            w_p4 = p1 - normal_dir * (wall_thickness/2)
+            obstacles.append(LinearRing([tuple(w_p1), tuple(w_p2), tuple(w_p3), tuple(w_p4)]))
+
+    # Generate start and dest inside the polygon
+    min_dist = 30.0
     while True:
-        start_x = random_uniform_num(min_x + margin, max_x - margin)
-        start_y = random_uniform_num(min_y + margin, max_y - margin)
-        dest_x = random_uniform_num(min_x + margin, max_x - margin)
-        dest_y = random_uniform_num(min_y + margin, max_y - margin)
+        # Sample points in bounding box and check if inside polygon
+        start_x = random_uniform_num(min_bound, max_bound)
+        start_y = random_uniform_num(min_bound, max_bound)
+        start_point = Point(start_x, start_y)
+        
+        if not polygon.contains(start_point):
+            continue
+            
+        dest_x = random_uniform_num(min_bound, max_bound)
+        dest_y = random_uniform_num(min_bound, max_bound)
+        dest_point = Point(dest_x, dest_y)
+        
+        if not polygon.contains(dest_point):
+            continue
+            
         if np.hypot(start_x - dest_x, start_y - dest_y) > min_dist:
-            break
+            # Check if start/dest are too close to walls (optional but good)
+            if polygon.boundary.distance(start_point) > 3.0 and polygon.boundary.distance(dest_point) > 3.0:
+                break
             
     start_yaw = random_uniform_num(-pi, pi)
     dest_yaw = random_uniform_num(-pi, pi)
     
-    # Sparse obstacles
-    n_obstacles = 25 # Increased number of obstacles
-    for _ in range(n_obstacles):
-        obs_x = random_uniform_num(min_x + 5, max_x - 5)
-        obs_y = random_uniform_num(min_y + 5, max_y - 5)
-        obs_yaw = random_uniform_num(-pi, pi)
+    # Internal obstacles
+    n_internal_obstacles = 10
+    for _ in range(n_internal_obstacles):
+        obs_x = random_uniform_num(min_bound, max_bound)
+        obs_y = random_uniform_num(min_bound, max_bound)
+        obs_point = Point(obs_x, obs_y)
         
-        # Check distance to start/dest
-        if np.hypot(obs_x - start_x, obs_y - start_y) < 10.0 or \
-           np.hypot(obs_x - dest_x, obs_y - dest_y) < 10.0:
+        if not polygon.contains(obs_point):
             continue
             
-        # Create random box obstacle - Increased size
-        obs_w = random_uniform_num(4.0, 8.0)
-        obs_h = random_uniform_num(4.0, 8.0)
+        # Check distance to start/dest/walls
+        if np.hypot(obs_x - start_x, obs_y - start_y) < 8.0 or \
+           np.hypot(obs_x - dest_x, obs_y - dest_y) < 8.0 or \
+           polygon.boundary.distance(obs_point) < 5.0:
+            continue
+            
+        obs_yaw = random_uniform_num(-pi, pi)
+        obs_w = random_uniform_num(3.0, 6.0)
+        obs_h = random_uniform_num(3.0, 6.0)
         
-        # Create box points
         cx, cy = obs_x, obs_y
         angle = obs_yaw
         cos_a, sin_a = np.cos(angle), np.sin(angle)
@@ -570,11 +656,11 @@ class ParkingMapNormal(object):
         self.dest = State(dest+[0,0])
         self.dest_box = self.dest.create_box()
         
-        # Set map boundaries to 200x200m (-100 to 100)
-        self.xmin = -100.0
-        self.xmax = 100.0
-        self.ymin = -100.0
-        self.ymax = 100.0
+        # Set map boundaries to 80x80m (-40 to 40)
+        self.xmin = -40.0
+        self.xmax = 40.0
+        self.ymin = -40.0
+        self.ymax = 40.0
         
         self.obstacles = list([Area(shape=obs, subtype="obstacle", \
             color=(150, 150, 150, 255)) for obs in obstacles])

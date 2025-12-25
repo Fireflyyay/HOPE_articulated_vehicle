@@ -129,37 +129,66 @@ class ArticulatedKSModel(KSModel):
 
     def step(self, state: State, action: list, step_time:int=NUM_STEP) -> State:
         new_state = copy.deepcopy(state)
-        steer, speed = action
+        omega, speed = action
         
         # Clip inputs
         new_state.speed = np.clip(speed, *self.speed_range)
-        new_state.steering = np.clip(steer, *self.angle_range)
+        new_state.steering = np.clip(omega, *self.angle_range)
+        
+        omega = new_state.steering
+        v = new_state.speed
+        
+        l1 = self.hitch_offset
+        l2 = self.trailer_length
+        phi_max = np.deg2rad(36) # Limit from paper
 
-        # Bicycle Model Kinematics
+        dt = self.step_len / self.mini_iter
+
         for _ in range(step_time):
             for _ in range(self.mini_iter):
-                # Update heading first
-                new_state.heading += new_state.speed * np.tan(new_state.steering) / self.wheel_base * self.step_len / self.mini_iter
+                theta1 = new_state.heading
+                theta2 = new_state.rear_heading
                 
-                # Update position using new heading
+                # Calculate current phi
+                phi = theta1 - theta2
+                # Normalize phi to [-pi, pi]
+                phi = (phi + np.pi) % (2 * np.pi) - np.pi
+                
+                # Check limits
+                effective_omega = omega
+                if phi >= phi_max and omega > 0:
+                    effective_omega = 0
+                elif phi <= -phi_max and omega < 0:
+                    effective_omega = 0
+                
+                # Kinematics
+                # theta1_dot = (v * sin(phi) + l2 * omega) / (l1 * cos(phi) + l2)
+                denom = l1 * np.cos(phi) + l2
+                if abs(denom) < 1e-6:
+                    denom = 1e-6
+
+                theta1_dot = (v * np.sin(phi) + l2 * effective_omega) / denom
+                theta2_dot = theta1_dot - effective_omega
+                
+                x_dot = v * np.cos(theta1)
+                y_dot = v * np.sin(theta1)
+                
+                # Update
                 new_state.loc = Point(
-                    new_state.loc.x + new_state.speed * np.cos(new_state.heading) * self.step_len / self.mini_iter,
-                    new_state.loc.y + new_state.speed * np.sin(new_state.heading) * self.step_len / self.mini_iter
+                    new_state.loc.x + x_dot * dt,
+                    new_state.loc.y + y_dot * dt
                 )
+                new_state.heading += theta1_dot * dt
+                new_state.rear_heading += theta2_dot * dt
 
-        # For a rigid vehicle (bicycle model), rear_heading is the same as heading
-        new_state.rear_heading = new_state.heading
-
-        # Update trailer_loc based on rigid body geometry (gamma=0)
-        Lf = self.hitch_offset
-        Lr = self.trailer_length
+        # Update trailer_loc based on geometry
+        # Hinge position O
+        hx = new_state.loc.x - l1 * np.cos(new_state.heading)
+        hy = new_state.loc.y - l1 * np.sin(new_state.heading)
         
-        # Hinge position
-        hx = new_state.loc.x - Lf * np.cos(new_state.heading)
-        hy = new_state.loc.y - Lf * np.sin(new_state.heading)
-        # Rear Axle position
-        tx = hx - Lr * np.cos(new_state.rear_heading)
-        ty = hy - Lr * np.sin(new_state.rear_heading)
+        # Rear Axle position O2
+        tx = hx - l2 * np.cos(new_state.rear_heading)
+        ty = hy - l2 * np.sin(new_state.rear_heading)
         new_state.trailer_loc = Point(tx, ty)
 
         return new_state

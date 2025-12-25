@@ -1,59 +1,87 @@
-# HOPE for articulated vehicles
-This fork is dedicated to transfer HOPE planner to articulated vehicles.
+# HOPE for Articulated Vehicles
 
-## TO-DO-LIST
-``vehicle.py``: 
-1. Adapt Action Mask to the articulated vehicle.
-2. Test current code with small bench size before formally train the model.
+This repository is a fork of the [HOPE planner](https://github.com/jiamiya/HOPE), adapted for **articulated vehicles** (e.g., tractor-trailers). It implements a Reinforcement Learning-based Hybrid Policy Path Planner for diverse parking scenarios, specifically designed to handle the complex kinematics of articulated vehicles.
 
+## Key Features
 
-
-# HOPE: A Reinforcement Learning-based Hybrid Policy Path Planner for Diverse Parking Scenarios
-![pipeline](assets/algo_struct.png)
-
-This repository contains code for the paper [HOPE: A Reinforcement Learning-based Hybrid Policy Path Planner for Diverse Parking Scenarios](https://arxiv.org/abs/2405.20579). This work proposes a novel solution to the path-planning task in parking scenarios. The planner integrates a reinforcement learning agent with Reeds-Shepp curves, enabling effective planning across diverse scenarios. HOPE guides the exploration of the reinforcement learning agent by applying an action mask mechanism and employs a transformer to integrate the perceived environmental information with the mask. Our approach achieved higher planning success rates compared with typical rule-based algorithms and traditional reinforcement learning methods, especially in challenging cases.
-
-## Examples
-### Simulation cases
-![simulation](assets/examples.jpg)
-
-### Realworld demo
-[https://www.youtube.com/watch?v=62w9qhjIuRI](https://www.youtube.com/watch?v=62w9qhjIuRI)
-![realworld](assets/realworld-cases.jpg)
+*   **Articulated Vehicle Model**: Simulates tractor-trailer kinematics, including hitch angle constraints and off-tracking effects.
+*   **Diverse Parking Scenarios**: Supports multiple difficulty levels for both Bay and Parallel parking:
+    *   **Normal**: Standard parking scenarios with reasonable space.
+    *   **Complex**: Tighter spaces, with initial positions typically perpendicular to the target.
+    *   **Extrem**: Very tight spaces, with initial positions typically opposite to the target, requiring complex maneuvering.
+*   **Hybrid Policy**: Combines Reinforcement Learning (PPO/SAC) with Reeds-Shepp curves for efficient and robust path planning.
+*   **Curriculum Learning**: The training process automatically adapts the difficulty of scenarios based on the agent's performance.
 
 ## Setup
-1. Install conda or miniconda
 
-2. Clone the repo and build the environment
-```Shell
-git clone https://github.com/jiamiya/HOPE.git
-cd HOPE
-conda create -n HOPE python==3.8
-conda activate HOPE
-pip3 install -r requirements.txt
-```
-and install pytorch from [https://pytorch.org/](https://pytorch.org/).
+1.  Install conda or miniconda.
+
+2.  Clone the repo and create the environment:
+
+    ```Shell
+    git clone <your-repo-url>
+    cd HOPE_articulated_vehicle
+    conda create -n HOPE python==3.8
+    conda activate HOPE
+    pip3 install -r requirements.txt
+    ```
+
+    Make sure to install PyTorch compatible with your CUDA version from [https://pytorch.org/](https://pytorch.org/).
 
 ## Usage
-### Run a pre-trained agent
+
+### Training
+
+To train the agent using PPO (Proximal Policy Optimization):
+
 ```Shell
 cd src
-python ./evaluation/eval_mix_scene.py ./model/ckpt/HOPE_SAC0.pt --eval_episode 10 --visualize True
+python ./train/train_HOPE_ppo.py
 ```
-You can find some other pre-trained weights in ``./src/model/ckpt``.
 
-### Train the HOPE planner
+To train the agent using SAC (Soft Actor-Critic):
+
 ```Shell
 cd src
 python ./train/train_HOPE_sac.py
 ```
-or
+
+Training logs and checkpoints will be saved in `src/log/exp/`.
+
+### Evaluation
+
+To evaluate a pre-trained agent:
+
 ```Shell
-python ./train/train_HOPE_ppo.py
+cd src
+python ./evaluation/eval_mix_scene.py <path_to_checkpoint> --eval_episode 10 --visualize True
 ```
 
-## Citation
-If you find our work useful, please cite us as
+Example:
+```Shell
+python ./evaluation/eval_mix_scene.py ./model/ckpt/HOPE_SAC0.pt --eval_episode 10 --visualize True
+```
+
+Arguments:
+*   `ckpt_path`: Path to the model checkpoint file (`.pt`).
+*   `--eval_episode`: Number of episodes to evaluate.
+*   `--visualize`: Whether to visualize the simulation (True/False).
+
+## Project Structure
+
+*   `src/configs.py`: Configuration parameters for vehicle dimensions, map levels, and RL hyperparameters.
+*   `src/env/`: Environment definitions.
+    *   `vehicle.py`: Articulated vehicle dynamics and kinematics.
+    *   `parking_map_normal.py`: Logic for generating parking scenarios (Normal, Complex, Extrem).
+    *   `map_level.py`: Difficulty level definitions.
+*   `src/model/`: RL agent implementations and network architectures.
+*   `src/train/`: Training scripts for PPO and SAC.
+*   `src/evaluation/`: Evaluation and visualization scripts.
+
+## Original Citation
+
+If you find the original HOPE work useful, please cite:
+
 ```bibtex
 @article{jiang2024hope,
   title={HOPE: A Reinforcement Learning-based Hybrid Policy Path Planner for Diverse Parking Scenarios},

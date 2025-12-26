@@ -572,7 +572,8 @@ def generate_navigation_case(map_level):
             obstacles.append(LinearRing([tuple(w_p1), tuple(w_p2), tuple(w_p3), tuple(w_p4)]))
 
     # Generate start and dest inside the polygon
-    min_dist = 30.0
+    # Increased distance range for tactics2d navigation scenarios (60-84m typical)
+    min_dist = random_uniform_num(50.0, 80.0)
     while True:
         # Sample points in bounding box and check if inside polygon
         start_x = random_uniform_num(min_bound, max_bound)
@@ -651,16 +652,24 @@ class ParkingMapNormal(object):
         start, dest, obstacles = generate_navigation_case(self.map_level)
         self.case_id = 2
         
-        self.start = State(start+[0,0])
+        # Add random articulation angle to initial state (critical for training!)
+        # Previously always 0, causing state_norm std=0 issue
+        start_articulation = random_uniform_num(np.radians(-10), np.radians(10))
+        start_rear_heading = start[2] - start_articulation  # rear_heading = front_heading - articulation
+        self.start = State(start+[0,0,start_rear_heading])
         self.start_box = self.start.create_box()
-        self.dest = State(dest+[0,0])
+        
+        # Dest should also have articulation possibility
+        dest_articulation = random_uniform_num(np.radians(-10), np.radians(10))
+        dest_rear_heading = dest[2] - dest_articulation
+        self.dest = State(dest+[0,0,dest_rear_heading])
         self.dest_box = self.dest.create_box()
         
-        # Set map boundaries to 80x80m (-40 to 40)
-        self.xmin = -40.0
-        self.xmax = 40.0
-        self.ymin = -40.0
-        self.ymax = 40.0
+        # Expanded map boundaries to 120x120m (-60 to 60) for longer navigation
+        self.xmin = -60.0
+        self.xmax = 60.0
+        self.ymin = -60.0
+        self.ymax = 60.0
         
         self.obstacles = list([Area(shape=obs, subtype="obstacle", \
             color=(150, 150, 150, 255)) for obs in obstacles])

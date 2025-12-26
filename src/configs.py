@@ -41,6 +41,7 @@ STEP_LENGTH = 5e-2
 
 ########################
 # senerio
+# Use 'Navigation' for tactics2d training instead of parking scenarios
 MAP_LEVEL = 'Normal' # ['Normal', 'Complex', 'Extrem']
 MIN_PARK_LOT_LEN_DICT = {'Extrem':LENGTH+0.6,
                             'Complex':LENGTH+0.9,
@@ -102,8 +103,9 @@ TOLERANT_TIME = 1000
 USE_LIDAR = True
 USE_IMG = True
 USE_ACTION_MASK = True
-MAX_DIST_TO_DEST = 200
-K = 3.0 # the render scale (240px / 80m = 3.0)
+# Increased for longer navigation scenarios (was 200, now supports up to 150m)
+MAX_DIST_TO_DEST = 300
+K = 2.0 # the render scale adjusted for larger map (240px / 120m = 2.0)
 RS_MAX_DIST = 50
 RENDER_TRAJ = True
 
